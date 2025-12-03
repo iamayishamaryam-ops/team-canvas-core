@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,12 +17,14 @@ const loginSchema = z.object({
 
 const signUpSchema = loginSchema.extend({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  role: z.enum(["manager", "employee"]),
 });
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [selectedRole, setSelectedRole] = useState<"manager" | "employee">("employee");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -43,7 +46,7 @@ const Login = () => {
 
     try {
       if (isSignUp) {
-        const result = signUpSchema.safeParse({ email, password, fullName });
+        const result = signUpSchema.safeParse({ email, password, fullName, role: selectedRole });
         if (!result.success) {
           toast({
             title: "Validation Error",
@@ -54,7 +57,7 @@ const Login = () => {
           return;
         }
 
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, selectedRole);
         if (error) {
           let message = error.message;
           if (message.includes("already registered")) {
@@ -185,18 +188,40 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-foreground">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="h-12 bg-secondary border-border focus:border-primary focus:ring-primary"
-                  required
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-foreground">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="h-12 bg-secondary border-border focus:border-primary focus:ring-primary"
+                    required
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-foreground">Select Your Role</Label>
+                  <RadioGroup
+                    value={selectedRole}
+                    onValueChange={(value) => setSelectedRole(value as "manager" | "employee")}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="employee" id="employee" />
+                      <Label htmlFor="employee" className="cursor-pointer text-muted-foreground">Employee</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="manager" id="manager" />
+                      <Label htmlFor="manager" className="cursor-pointer text-muted-foreground">Manager</Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground">
+                    CEO, Admin & HR roles are assigned by administrators only.
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
