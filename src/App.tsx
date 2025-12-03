@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
@@ -22,19 +24,77 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/employees" element={<Employees />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/leave" element={<Leave />} />
-          <Route path="/salary" element={<Salary />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/employees"
+              element={
+                <ProtectedRoute allowedRoles={["ceo", "admin_hr", "bdm"]}>
+                  <Employees />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <Attendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leave"
+              element={
+                <ProtectedRoute>
+                  <Leave />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/salary"
+              element={
+                <ProtectedRoute allowedRoles={["ceo", "admin_hr"]}>
+                  <Salary />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute>
+                  <Documents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses"
+              element={
+                <ProtectedRoute allowedRoles={["ceo", "admin_hr", "bdm"]}>
+                  <Expenses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
