@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -17,20 +17,60 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth, roleDisplayNames, AppRole } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles?: AppRole[]; // If not specified, accessible by all
+}
+
+const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Employees", href: "/employees", icon: Users },
+  { name: "Employees", href: "/employees", icon: Users, roles: ["ceo", "admin_hr", "bdm"] },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Leave", href: "/leave", icon: Calendar },
-  { name: "Salary", href: "/salary", icon: DollarSign },
+  { name: "Salary", href: "/salary", icon: DollarSign, roles: ["ceo", "admin_hr"] },
   { name: "Documents", href: "/documents", icon: FileText },
-  { name: "Expenses", href: "/expenses", icon: Receipt },
+  { name: "Expenses", href: "/expenses", icon: Receipt, roles: ["ceo", "admin_hr", "bdm"] },
   { name: "Notifications", href: "/notifications", icon: Bell },
 ];
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const { profile, role, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    navigate("/login");
+  };
+
+  // Filter navigation based on user role
+  const filteredNavigation = navigation.filter((item) => {
+    if (!item.roles) return true; // Accessible by all
+    if (!role) return false;
+    return item.roles.includes(role);
+  });
+
+  // Get initials from profile name
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return profile?.email?.slice(0, 2).toUpperCase() || "U";
+  };
 
   return (
     <aside
@@ -65,7 +105,7 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 p-3">
-          {navigation.map((item) => (
+          {filteredNavigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
@@ -94,13 +134,17 @@ const Sidebar = () => {
             )}
           >
             <Avatar className="h-9 w-9 border-2 border-primary/20">
-              <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
-              <AvatarFallback className="bg-primary/10 text-primary">JD</AvatarFallback>
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary">{getInitials()}</AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-                <p className="text-xs text-muted-foreground truncate">Admin</p>
+                <p className="text-sm font-medium text-foreground truncate">
+                  {profile?.full_name || profile?.email || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {role ? roleDisplayNames[role] : "Loading..."}
+                </p>
               </div>
             )}
             {!collapsed && (
@@ -111,6 +155,7 @@ const Sidebar = () => {
           </div>
           <Button
             variant="ghost"
+            onClick={handleLogout}
             className={cn(
               "mt-2 w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
               collapsed && "justify-center px-2"
