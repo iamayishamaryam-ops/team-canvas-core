@@ -32,7 +32,7 @@ const navigation: NavItem[] = [
   { name: "Employees", href: "/employees", icon: Users, roles: ["ceo", "admin_hr", "bdm"] },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Leave", href: "/leave", icon: Calendar },
-  { name: "Salary", href: "/salary", icon: DollarSign, roles: ["ceo", "admin_hr"] },
+  { name: "Salary", href: "/salary", icon: DollarSign, roles: ["ceo", "admin_hr", "bdm"] },
   { name: "Documents", href: "/documents", icon: FileText },
   { name: "Expenses", href: "/expenses", icon: Receipt, roles: ["ceo", "admin_hr", "bdm"] },
   { name: "Notifications", href: "/notifications", icon: Bell },

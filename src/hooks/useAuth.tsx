@@ -142,15 +142,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Role-based permissions
   // CEO: Full access to all modules
   // Admin/HR: Full access except system settings, can manage salary/documents/employees
-  // BDM: Limited admin - can manage employees only, no salary access
+  // BDM: Full access (same as Admin/HR)
   // Manager: Access employees under them, approve/reject leave, no salary/documents of others
   // Employee: View only their profile, apply leave, view own salary, upload own documents
   const isAdminLevel = role === "ceo" || role === "admin_hr" || role === "bdm";
-  const canManageSalary = role === "ceo" || role === "admin_hr";
+  const canManageSalary = role === "ceo" || role === "admin_hr" || role === "bdm";
   const canManageEmployees = role === "ceo" || role === "admin_hr" || role === "bdm";
-  const canApproveLeave = role === "ceo" || role === "admin_hr" || role === "manager";
-  const canViewAllDocuments = role === "ceo" || role === "admin_hr";
-  const canViewAllSalary = role === "ceo" || role === "admin_hr";
+  const canApproveLeave = role === "ceo" || role === "admin_hr" || role === "bdm" || role === "manager";
+  const canViewAllDocuments = role === "ceo" || role === "admin_hr" || role === "bdm";
+  const canViewAllSalary = role === "ceo" || role === "admin_hr" || role === "bdm";
   const canManageExpenses = role === "ceo" || role === "admin_hr" || role === "bdm";
   const canManageAttendance = role === "ceo" || role === "admin_hr" || role === "bdm";
 
