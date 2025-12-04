@@ -24,10 +24,15 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string, role?: "manager" | "employee") => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  isAdminLevel: boolean;
-  canManageSalary: boolean;
-  canManageEmployees: boolean;
-  canApproveLeave: boolean;
+  // Permission flags based on role hierarchy
+  isAdminLevel: boolean;           // CEO, Admin/HR, BDM
+  canManageSalary: boolean;        // CEO, Admin/HR only
+  canManageEmployees: boolean;     // CEO, Admin/HR, BDM
+  canApproveLeave: boolean;        // CEO, Admin/HR, Manager
+  canViewAllDocuments: boolean;    // CEO, Admin/HR
+  canViewAllSalary: boolean;       // CEO, Admin/HR
+  canManageExpenses: boolean;      // CEO, Admin/HR, BDM
+  canManageAttendance: boolean;    // CEO, Admin/HR, BDM
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -135,10 +140,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Role-based permissions
+  // CEO: Full access to all modules
+  // Admin/HR: Full access except system settings, can manage salary/documents/employees
+  // BDM: Limited admin - can manage employees only, no salary access
+  // Manager: Access employees under them, approve/reject leave, no salary/documents of others
+  // Employee: View only their profile, apply leave, view own salary, upload own documents
   const isAdminLevel = role === "ceo" || role === "admin_hr" || role === "bdm";
   const canManageSalary = role === "ceo" || role === "admin_hr";
   const canManageEmployees = role === "ceo" || role === "admin_hr" || role === "bdm";
   const canApproveLeave = role === "ceo" || role === "admin_hr" || role === "manager";
+  const canViewAllDocuments = role === "ceo" || role === "admin_hr";
+  const canViewAllSalary = role === "ceo" || role === "admin_hr";
+  const canManageExpenses = role === "ceo" || role === "admin_hr" || role === "bdm";
+  const canManageAttendance = role === "ceo" || role === "admin_hr" || role === "bdm";
 
   return (
     <AuthContext.Provider
@@ -155,6 +169,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         canManageSalary,
         canManageEmployees,
         canApproveLeave,
+        canViewAllDocuments,
+        canViewAllSalary,
+        canManageExpenses,
+        canManageAttendance,
       }}
     >
       {children}
