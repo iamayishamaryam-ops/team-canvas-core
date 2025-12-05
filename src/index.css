@@ -7,71 +7,86 @@
 @import "@fontsource/dm-sans/600.css";
 @import "@fontsource/dm-sans/700.css";
 
-/* Beauty Maps CRM Design System - Dark Professional Theme */
+/* Beauty Maps CRM Design System - Brand Colors */
+/* Primary: #27333C (Dark Teal), #BE8E44 (Gold), #4A778E (Teal), #E8B787 (Peach) */
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Background colors - using brand dark teal #27333C */
+    --background: 200 22% 19%;
+    --foreground: 40 30% 95%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 200 22% 15%;
+    --card-foreground: 40 30% 95%;
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 200 22% 12%;
+    --popover-foreground: 40 30% 95%;
 
-    --primary: 174 72% 46%;
-    --primary-foreground: 222 47% 6%;
+    /* Primary - Brand Gold #BE8E44 */
+    --primary: 36 51% 50%;
+    --primary-foreground: 200 22% 10%;
 
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary - using darker shade */
+    --secondary: 200 22% 22%;
+    --secondary-foreground: 40 30% 95%;
 
-    --muted: 222 30% 18%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 200 18% 25%;
+    --muted-foreground: 200 15% 55%;
 
-    --accent: 38 92% 55%;
-    --accent-foreground: 222 47% 6%;
+    /* Accent - Light Gold #E8B787 */
+    --accent: 28 65% 72%;
+    --accent-foreground: 200 22% 10%;
 
     --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 40 30% 95%;
 
-    --success: 142 72% 45%;
-    --success-foreground: 222 47% 6%;
+    /* Success - Teal variation */
+    --success: 174 50% 40%;
+    --success-foreground: 200 22% 10%;
 
-    --warning: 38 92% 55%;
-    --warning-foreground: 222 47% 6%;
+    /* Warning - Gold */
+    --warning: 36 51% 50%;
+    --warning-foreground: 200 22% 10%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 14%;
-    --ring: 174 72% 46%;
+    /* Border & Input - Brand Teal #4A778E */
+    --border: 200 28% 28%;
+    --input: 200 22% 22%;
+    --ring: 36 51% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 174 72% 46%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 15%;
-    --sidebar-ring: 174 72% 46%;
+    /* Sidebar - Brand colors */
+    --sidebar-background: 200 22% 12%;
+    --sidebar-foreground: 40 25% 85%;
+    --sidebar-primary: 36 51% 50%;
+    --sidebar-primary-foreground: 200 22% 10%;
+    --sidebar-accent: 200 22% 18%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 200 22% 20%;
+    --sidebar-ring: 36 51% 50%;
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(174 72% 46%) 0%, hsl(190 72% 35%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38 92% 55%) 0%, hsl(28 92% 50%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(222 47% 10%) 0%, hsl(222 47% 8%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
+    /* Custom gradients - Brand colors */
+    --gradient-primary: linear-gradient(135deg, hsl(36 51% 50%) 0%, hsl(28 65% 60%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(28 65% 72%) 0%, hsl(36 51% 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(200 22% 18%) 0%, hsl(200 22% 14%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(200 22% 15%) 0%, hsl(200 22% 10%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 2px 8px -2px hsl(222 47% 4% / 0.5);
-    --shadow-md: 0 4px 16px -4px hsl(222 47% 4% / 0.6);
-    --shadow-lg: 0 8px 32px -8px hsl(222 47% 4% / 0.7);
-    --shadow-glow: 0 0 40px -10px hsl(174 72% 46% / 0.3);
+    /* Shadows - Brand teal tones */
+    --shadow-sm: 0 2px 8px -2px hsl(200 22% 8% / 0.5);
+    --shadow-md: 0 4px 16px -4px hsl(200 22% 8% / 0.6);
+    --shadow-lg: 0 8px 32px -8px hsl(200 22% 8% / 0.7);
+    --shadow-glow: 0 0 40px -10px hsl(36 51% 50% / 0.4);
+
+    /* Brand-specific colors for direct use */
+    --brand-teal-dark: 200 22% 19%;
+    --brand-gold: 36 51% 50%;
+    --brand-teal: 197 31% 42%;
+    --brand-peach: 28 65% 72%;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 200 22% 19%;
+    --foreground: 40 30% 95%;
   }
 }
 
@@ -110,5 +125,30 @@
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);
+  }
+
+  /* Brand color utilities */
+  .bg-brand-teal {
+    background-color: hsl(var(--brand-teal));
+  }
+
+  .bg-brand-gold {
+    background-color: hsl(var(--brand-gold));
+  }
+
+  .bg-brand-peach {
+    background-color: hsl(var(--brand-peach));
+  }
+
+  .text-brand-gold {
+    color: hsl(var(--brand-gold));
+  }
+
+  .text-brand-teal {
+    color: hsl(var(--brand-teal));
+  }
+
+  .border-brand-gold {
+    border-color: hsl(var(--brand-gold));
   }
 }
