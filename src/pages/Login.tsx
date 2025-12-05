@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
+import logo from "@/assets/logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -135,14 +136,9 @@ const Login = () => {
           <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
         </div>
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-glow">
-              <Sparkles className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-foreground">Beauty Maps</h1>
-              <p className="text-muted-foreground">Internal CRM System</p>
-            </div>
+          <div className="flex flex-col items-center mb-8">
+            <img src={logo} alt="Beauty Maps" className="h-40 w-auto mb-4" />
+            <p className="text-muted-foreground">Internal CRM System</p>
           </div>
           <div className="max-w-md text-center">
             <h2 className="text-2xl font-semibold text-foreground mb-4">
@@ -170,11 +166,8 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md animate-fade-in">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary shadow-glow">
-              <Sparkles className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">Beauty Maps</span>
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <img src={logo} alt="Beauty Maps" className="h-24 w-auto" />
           </div>
 
           <div className="space-y-2 mb-8">

@@ -13,12 +13,12 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth, roleDisplayNames, AppRole } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.png";
 
 interface NavItem {
   name: string;
@@ -83,12 +83,11 @@ const Sidebar = () => {
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
           <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
-            </div>
-            {!collapsed && (
-              <span className="text-lg font-semibold text-foreground">Beauty Maps</span>
-            )}
+            <img 
+              src={logo} 
+              alt="Beauty Maps" 
+              className={cn("transition-all", collapsed ? "h-10 w-10 object-contain" : "h-12 w-auto")} 
+            />
           </div>
           <Button
             variant="ghost"
