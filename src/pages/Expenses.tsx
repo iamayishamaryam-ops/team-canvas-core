@@ -1,5 +1,9 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -10,6 +14,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Receipt,
   Plus,
@@ -23,72 +43,32 @@ import {
   Car,
   Utensils,
   Monitor,
+  GraduationCap,
+  MoreHorizontal,
+  Trash,
+  Loader2,
 } from "lucide-react";
+import { useExpenses, useMyExpenses, useCreateExpense, useUpdateExpenseStatus, useDeleteExpense, Expense } from "@/hooks/useExpenses";
+import { useAuth } from "@/hooks/useAuth";
+import { format, parseISO } from "date-fns";
 
-const expenses = [
-  {
-    id: 1,
-    employee: "Sarah Johnson",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    category: "Travel",
-    description: "Client meeting - Uber rides",
-    amount: 85.50,
-    date: "Dec 1, 2024",
-    status: "Pending",
-    icon: Car,
-  },
-  {
-    id: 2,
-    employee: "Michael Chen",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    category: "Equipment",
-    description: "Mechanical keyboard for development",
-    amount: 250.00,
-    date: "Nov 28, 2024",
-    status: "Approved",
-    icon: Monitor,
-  },
-  {
-    id: 3,
-    employee: "Emily Davis",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-    category: "Meals",
-    description: "Team lunch - Q4 planning",
-    amount: 320.75,
-    date: "Nov 25, 2024",
-    status: "Approved",
-    icon: Utensils,
-  },
-  {
-    id: 4,
-    employee: "James Wilson",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-    category: "Office",
-    description: "Office supplies - printer paper, pens",
-    amount: 45.20,
-    date: "Nov 20, 2024",
-    status: "Rejected",
-    icon: Building,
-  },
-  {
-    id: 5,
-    employee: "Lisa Anderson",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-    category: "Travel",
-    description: "Conference hotel - 2 nights",
-    amount: 450.00,
-    date: "Nov 15, 2024",
-    status: "Pending",
-    icon: Car,
-  },
-];
+const categoryIcons: Record<string, typeof Car> = {
+  travel: Car,
+  meals: Utensils,
+  supplies: Building,
+  equipment: Monitor,
+  training: GraduationCap,
+  other: MoreHorizontal,
+};
 
-const categories = [
-  { name: "Travel", amount: 12500, icon: Car, color: "text-primary" },
-  { name: "Equipment", amount: 8200, icon: Monitor, color: "text-success" },
-  { name: "Meals", amount: 5400, icon: Utensils, color: "text-warning" },
-  { name: "Office", amount: 3100, icon: Building, color: "text-accent" },
-];
+const categoryLabels: Record<string, string> = {
+  travel: "Travel",
+  meals: "Meals",
+  supplies: "Supplies",
+  equipment: "Equipment",
+  training: "Training",
+  other: "Other",
+};
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-US", {
@@ -99,20 +79,79 @@ const formatCurrency = (amount: number) => {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case "Approved":
+    case "approved":
       return "bg-success/10 text-success border-success/20";
-    case "Pending":
+    case "pending":
       return "bg-warning/10 text-warning border-warning/20";
-    case "Rejected":
+    case "rejected":
       return "bg-destructive/10 text-destructive border-destructive/20";
+    case "reimbursed":
+      return "bg-primary/10 text-primary border-primary/20";
     default:
       return "";
   }
 };
 
 const Expenses = () => {
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const pendingExpenses = expenses.filter((e) => e.status === "Pending").reduce((sum, exp) => sum + exp.amount, 0);
+  const [activeTab, setActiveTab] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
+
+  const { data: allExpenses, isLoading } = useExpenses(activeTab);
+  const { data: myExpenses } = useMyExpenses();
+  const createExpense = useCreateExpense();
+  const updateStatus = useUpdateExpenseStatus();
+  const deleteExpense = useDeleteExpense();
+  const { user, isAdminLevel } = useAuth();
+
+  const expenses = isAdminLevel ? allExpenses : myExpenses;
+
+  const totalExpenses = expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+  const pendingExpenses = expenses?.filter((e) => e.status === "pending").reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+  const approvedExpenses = expenses?.filter((e) => e.status === "approved" || e.status === "reimbursed").reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+
+  const categoryTotals = Object.keys(categoryLabels).map((cat) => {
+    const total = expenses?.filter((e) => e.category === cat).reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+    return { category: cat, total };
+  }).filter((c) => c.total > 0);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!category || !amount || !description) return;
+
+    createExpense.mutate(
+      {
+        category,
+        amount: parseFloat(amount),
+        description,
+        expense_date: expenseDate,
+      },
+      {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setCategory("");
+          setAmount("");
+          setDescription("");
+          setExpenseDate(new Date().toISOString().split("T")[0]);
+        },
+      }
+    );
+  };
+
+  const handleApprove = (id: string) => {
+    updateStatus.mutate({ id, status: "approved", reviewed_by: user?.id });
+  };
+
+  const handleReject = (id: string) => {
+    updateStatus.mutate({ id, status: "rejected", reviewed_by: user?.id });
+  };
+
+  const handleReimburse = (id: string) => {
+    updateStatus.mutate({ id, status: "reimbursed", reviewed_by: user?.id });
+  };
 
   return (
     <DashboardLayout>
@@ -124,14 +163,78 @@ const Expenses = () => {
             <p className="text-muted-foreground mt-1">Track and manage company expenses</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="border-border hover:bg-secondary">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Button>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">Add New Expense</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Submit a new expense for approval.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger className="bg-secondary border-border">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border">
+                        {Object.entries(categoryLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Amount</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="bg-secondary border-border"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input
+                        type="date"
+                        value={expenseDate}
+                        onChange={(e) => setExpenseDate(e.target.value)}
+                        className="bg-secondary border-border"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Brief description of the expense..."
+                      className="bg-secondary border-border min-h-[100px]"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full gradient-primary text-primary-foreground"
+                    disabled={createExpense.isPending}
+                  >
+                    {createExpense.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Submit Expense
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -144,7 +247,7 @@ const Expenses = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Expenses</p>
-                <p className="text-2xl font-bold text-foreground">{formatCurrency(29200)}</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(totalExpenses)}</p>
               </div>
             </div>
           </div>
@@ -165,8 +268,8 @@ const Expenses = () => {
                 <TrendingUp className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold text-foreground">{formatCurrency(totalExpenses)}</p>
+                <p className="text-sm text-muted-foreground">Approved</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(approvedExpenses)}</p>
               </div>
             </div>
           </div>
@@ -177,114 +280,176 @@ const Expenses = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Claims</p>
-                <p className="text-2xl font-bold text-foreground">{expenses.length}</p>
+                <p className="text-2xl font-bold text-foreground">{expenses?.length || 0}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Categories */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in" style={{ animationDelay: "200ms" }}>
-          {categories.map((category) => (
-            <div
-              key={category.name}
-              className="rounded-xl border border-border bg-card p-4 hover:border-primary/30 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`rounded-lg bg-secondary p-2 ${category.color}`}>
-                    <category.icon className="h-4 w-4" />
+        {categoryTotals.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in" style={{ animationDelay: "200ms" }}>
+            {categoryTotals.map((cat) => {
+              const Icon = categoryIcons[cat.category];
+              return (
+                <div
+                  key={cat.category}
+                  className="rounded-xl border border-border bg-card p-4 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-secondary p-2 text-primary">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium text-foreground">{categoryLabels[cat.category]}</span>
+                    </div>
+                    <span className="text-foreground font-semibold">{formatCurrency(cat.total)}</span>
                   </div>
-                  <span className="font-medium text-foreground">{category.name}</span>
                 </div>
-                <span className="text-foreground font-semibold">{formatCurrency(category.amount)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Expenses Table */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in" style={{ animationDelay: "300ms" }}>
+        <div className="rounded-xl border border-border bg-card animate-fade-in" style={{ animationDelay: "300ms" }}>
+          {isAdminLevel && (
+            <Tabs defaultValue="all" className="w-full">
+              <div className="border-b border-border px-4">
+                <TabsList className="bg-transparent h-14 gap-4">
+                  {["all", "pending", "approved", "rejected", "reimbursed"].map((tab) => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none capitalize"
+                    >
+                      {tab === "all" ? "All" : tab}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </Tabs>
+          )}
+          
           <div className="border-b border-border p-5">
             <h3 className="text-lg font-semibold text-foreground">Recent Expenses</h3>
             <p className="text-sm text-muted-foreground">Review and approve expense claims</p>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="text-muted-foreground">Employee</TableHead>
-                <TableHead className="text-muted-foreground">Category</TableHead>
-                <TableHead className="text-muted-foreground">Description</TableHead>
-                <TableHead className="text-muted-foreground text-right">Amount</TableHead>
-                <TableHead className="text-muted-foreground">Date</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
-                <TableHead className="text-muted-foreground">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.map((expense, index) => (
-                <TableRow
-                  key={expense.id}
-                  className="border-border hover:bg-secondary/50 transition-colors animate-fade-in"
-                  style={{ animationDelay: `${(index + 4) * 50}ms` }}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border-2 border-border">
-                        <AvatarImage src={expense.avatar} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {expense.employee.split(" ").map((n) => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium text-foreground">{expense.employee}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <expense.icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-foreground">{expense.category}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                    {expense.description}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-foreground">
-                    {formatCurrency(expense.amount)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{expense.date}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusBadge(expense.status)}>
-                      {expense.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {expense.status === "Pending" ? (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-success hover:bg-success/10 hover:text-success"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
-                        View
-                      </Button>
-                    )}
-                  </TableCell>
+
+          {isLoading ? (
+            <div className="p-8 flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : expenses?.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              No expenses found. Add an expense to get started.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border hover:bg-transparent">
+                  {isAdminLevel && <TableHead className="text-muted-foreground">Employee</TableHead>}
+                  <TableHead className="text-muted-foreground">Category</TableHead>
+                  <TableHead className="text-muted-foreground">Description</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Amount</TableHead>
+                  <TableHead className="text-muted-foreground">Date</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-muted-foreground">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {expenses?.map((expense, index) => {
+                  const Icon = categoryIcons[expense.category] || MoreHorizontal;
+                  return (
+                    <TableRow
+                      key={expense.id}
+                      className="border-border hover:bg-secondary/50 transition-colors animate-fade-in"
+                      style={{ animationDelay: `${(index + 4) * 50}ms` }}
+                    >
+                      {isAdminLevel && (
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9 border-2 border-border">
+                              <AvatarImage src={expense.profiles?.avatar_url || undefined} />
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {expense.profiles?.full_name?.split(" ").map((n) => n[0]).join("") || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium text-foreground">{expense.profiles?.full_name || "Unknown"}</span>
+                          </div>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground">{categoryLabels[expense.category]}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground max-w-[200px] truncate">
+                        {expense.description}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-foreground">
+                        {formatCurrency(Number(expense.amount))}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(parseISO(expense.expense_date), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusBadge(expense.status)}>
+                          {expense.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {expense.status === "pending" && isAdminLevel ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => handleReject(expense.id)}
+                              disabled={updateStatus.isPending}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-success hover:bg-success/10 hover:text-success"
+                              onClick={() => handleApprove(expense.id)}
+                              disabled={updateStatus.isPending}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : expense.status === "approved" && isAdminLevel ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:text-primary/80"
+                            onClick={() => handleReimburse(expense.id)}
+                            disabled={updateStatus.isPending}
+                          >
+                            Reimburse
+                          </Button>
+                        ) : expense.status === "pending" && expense.user_id === user?.id ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteExpense.mutate(expense.id)}
+                            disabled={deleteExpense.isPending}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </DashboardLayout>

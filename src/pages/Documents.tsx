@@ -1,8 +1,10 @@
+import { useState, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -12,6 +14,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   FileText,
   Upload,
   Search,
@@ -20,77 +37,23 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Filter,
+  Trash,
+  Loader2,
 } from "lucide-react";
+import { useEmployeeDocuments, EmployeeDocument } from "@/hooks/useEmployeeDocuments";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useAuth } from "@/hooks/useAuth";
+import { differenceInDays, parseISO, format } from "date-fns";
 
-const documents = [
-  {
-    id: 1,
-    name: "Employment Contract",
-    employee: "Sarah Johnson",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    type: "Contract",
-    uploadDate: "Jan 15, 2022",
-    expiryDate: "Jan 15, 2025",
-    status: "Valid",
-    daysToExpiry: 408,
-  },
-  {
-    id: 2,
-    name: "Work Visa",
-    employee: "Michael Chen",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    type: "Visa",
-    uploadDate: "Mar 22, 2023",
-    expiryDate: "Dec 22, 2024",
-    status: "Expiring Soon",
-    daysToExpiry: 19,
-  },
-  {
-    id: 3,
-    name: "ID Card",
-    employee: "Emily Davis",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-    type: "ID",
-    uploadDate: "Jul 8, 2023",
-    expiryDate: "Jul 8, 2028",
-    status: "Valid",
-    daysToExpiry: 1313,
-  },
-  {
-    id: 4,
-    name: "Medical Certificate",
-    employee: "James Wilson",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-    type: "Medical",
-    uploadDate: "Nov 30, 2023",
-    expiryDate: "Nov 30, 2024",
-    status: "Expired",
-    daysToExpiry: -3,
-  },
-  {
-    id: 5,
-    name: "Driving License",
-    employee: "Lisa Anderson",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-    type: "License",
-    uploadDate: "Feb 14, 2024",
-    expiryDate: "Feb 14, 2029",
-    status: "Valid",
-    daysToExpiry: 1534,
-  },
-  {
-    id: 6,
-    name: "NDA Agreement",
-    employee: "David Kim",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
-    type: "Contract",
-    uploadDate: "Sep 5, 2020",
-    expiryDate: "Dec 10, 2024",
-    status: "Expiring Soon",
-    daysToExpiry: 7,
-  },
-];
+const getDocumentStatus = (expiryDate: string | null) => {
+  if (!expiryDate) return { status: "Valid", color: "success", days: null };
+  
+  const days = differenceInDays(parseISO(expiryDate), new Date());
+  
+  if (days < 0) return { status: "Expired", color: "destructive", days };
+  if (days <= 30) return { status: "Expiring Soon", color: "warning", days };
+  return { status: "Valid", color: "success", days };
+};
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -119,8 +82,71 @@ const getStatusIcon = (status: string) => {
 };
 
 const Documents = () => {
-  const expiringCount = documents.filter((d) => d.status === "Expiring Soon").length;
-  const expiredCount = documents.filter((d) => d.status === "Expired").length;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [documentName, setDocumentName] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: employees } = useEmployees();
+  const { user, isAdminLevel } = useAuth();
+  
+  // For admins, fetch all documents; for employees, fetch only their own
+  const targetUserId = isAdminLevel ? undefined : user?.id;
+  const { documents, isLoading, uploadDocument, deleteDocument, getDocumentUrl } = useEmployeeDocuments(targetUserId || "");
+
+  const allDocuments = isAdminLevel 
+    ? employees?.flatMap(emp => {
+        const { documents: empDocs } = useEmployeeDocuments(emp.id);
+        return empDocs?.map(doc => ({ ...doc, employee: emp })) || [];
+      }) || []
+    : documents?.map(doc => ({ ...doc, employee: employees?.find(e => e.id === user?.id) })) || [];
+
+  const filteredDocuments = allDocuments.filter(doc => 
+    doc.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doc.employee?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const expiringCount = filteredDocuments.filter(doc => {
+    const status = getDocumentStatus(doc.expiry_date);
+    return status.status === "Expiring Soon";
+  }).length;
+
+  const expiredCount = filteredDocuments.filter(doc => {
+    const status = getDocumentStatus(doc.expiry_date);
+    return status.status === "Expired";
+  }).length;
+
+  const handleUpload = async () => {
+    if (!selectedFile || !selectedEmployee || !documentName) return;
+
+    await uploadDocument.mutateAsync({
+      file: selectedFile,
+      fileName: documentName,
+      expiryDate: expiryDate || undefined,
+    });
+
+    setUploadDialogOpen(false);
+    setSelectedFile(null);
+    setSelectedEmployee("");
+    setDocumentName("");
+    setExpiryDate("");
+  };
+
+  const handleDownload = async (doc: EmployeeDocument) => {
+    const url = await getDocumentUrl(doc.file_path);
+    if (url) {
+      window.open(url, "_blank");
+    }
+  };
+
+  const handleDelete = async (doc: EmployeeDocument) => {
+    if (confirm("Are you sure you want to delete this document?")) {
+      await deleteDocument.mutateAsync(doc.id);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -131,10 +157,76 @@ const Documents = () => {
             <h1 className="text-3xl font-bold text-foreground">Documents</h1>
             <p className="text-muted-foreground mt-1">Manage employee documents and track expiries</p>
           </div>
-          <Button className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90">
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Document
-          </Button>
+          <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Document
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">Upload Document</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Upload a new document for an employee.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {isAdminLevel && (
+                  <div className="space-y-2">
+                    <Label>Employee</Label>
+                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                      <SelectTrigger className="bg-secondary border-border">
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border">
+                        {employees?.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id}>
+                            {emp.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Document Name</Label>
+                  <Input
+                    value={documentName}
+                    onChange={(e) => setDocumentName(e.target.value)}
+                    placeholder="e.g., Employment Contract, ID Card"
+                    className="bg-secondary border-border"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Expiry Date (Optional)</Label>
+                  <Input
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                    className="bg-secondary border-border"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>File</Label>
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="bg-secondary border-border"
+                  />
+                </div>
+                <Button
+                  onClick={handleUpload}
+                  className="w-full gradient-primary text-primary-foreground"
+                  disabled={uploadDocument.isPending || !selectedFile || (!isAdminLevel && !user?.id) || (isAdminLevel && !selectedEmployee)}
+                >
+                  {uploadDocument.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Upload Document
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Alert Cards */}
@@ -146,7 +238,7 @@ const Documents = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Documents</p>
-                <p className="text-2xl font-bold text-foreground">{documents.length}</p>
+                <p className="text-2xl font-bold text-foreground">{filteredDocuments.length}</p>
               </div>
             </div>
           </div>
@@ -180,84 +272,105 @@ const Documents = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search documents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-secondary border-border focus:border-primary"
             />
           </div>
-          <Button variant="outline" className="border-border hover:bg-secondary">
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
         </div>
 
         {/* Documents Table */}
         <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in" style={{ animationDelay: "300ms" }}>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="text-muted-foreground">Document</TableHead>
-                <TableHead className="text-muted-foreground">Employee</TableHead>
-                <TableHead className="text-muted-foreground">Type</TableHead>
-                <TableHead className="text-muted-foreground">Upload Date</TableHead>
-                <TableHead className="text-muted-foreground">Expiry Date</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
-                <TableHead className="text-muted-foreground">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documents.map((doc, index) => (
-                <TableRow
-                  key={doc.id}
-                  className="border-border hover:bg-secondary/50 transition-colors animate-fade-in"
-                  style={{ animationDelay: `${(index + 4) * 50}ms` }}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-secondary p-2">
-                        <FileText className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-medium text-foreground">{doc.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7 border border-border">
-                        <AvatarImage src={doc.avatar} />
-                        <AvatarFallback className="text-xs">
-                          {doc.employee.split(" ").map((n) => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-foreground">{doc.employee}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-secondary border-border text-muted-foreground">
-                      {doc.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{doc.uploadDate}</TableCell>
-                  <TableCell className="text-foreground">{doc.expiryDate}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(doc.status)}
-                      <Badge variant="outline" className={getStatusBadge(doc.status)}>
-                        {doc.status}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {isLoading ? (
+            <div className="p-8 flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredDocuments.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              No documents found. Upload documents to see them here.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">Document</TableHead>
+                  {isAdminLevel && <TableHead className="text-muted-foreground">Employee</TableHead>}
+                  <TableHead className="text-muted-foreground">Upload Date</TableHead>
+                  <TableHead className="text-muted-foreground">Expiry Date</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-muted-foreground">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments.map((doc, index) => {
+                  const status = getDocumentStatus(doc.expiry_date);
+                  return (
+                    <TableRow
+                      key={doc.id}
+                      className="border-border hover:bg-secondary/50 transition-colors animate-fade-in"
+                      style={{ animationDelay: `${(index + 4) * 50}ms` }}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-lg bg-secondary p-2">
+                            <FileText className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="font-medium text-foreground">{doc.file_name}</span>
+                        </div>
+                      </TableCell>
+                      {isAdminLevel && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7 border border-border">
+                              <AvatarImage src={doc.employee?.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {doc.employee?.full_name?.split(" ").map((n) => n[0]).join("") || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-foreground">{doc.employee?.full_name || "Unknown"}</span>
+                          </div>
+                        </TableCell>
+                      )}
+                      <TableCell className="text-muted-foreground">
+                        {format(parseISO(doc.created_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        {doc.expiry_date ? format(parseISO(doc.expiry_date), "MMM d, yyyy") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(status.status)}
+                          <Badge variant="outline" className={getStatusBadge(status.status)}>
+                            {status.status}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleDownload(doc)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(doc)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </DashboardLayout>

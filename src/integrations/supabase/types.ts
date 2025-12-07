@@ -14,6 +14,306 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          overtime_hours: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          overtime_hours?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          overtime_hours?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string
+          expense_date: string
+          id: string
+          receipt_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          description: string
+          expense_date?: string
+          id?: string
+          receipt_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          receipt_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_balances: {
+        Row: {
+          created_at: string | null
+          id: string
+          leave_type: string
+          total_days: number
+          updated_at: string | null
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          leave_type: string
+          total_days?: number
+          updated_at?: string | null
+          used_days?: number
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          leave_type?: string
+          total_days?: number
+          updated_at?: string | null
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          created_at: string | null
+          days_count: number
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string
+          status: string | null
+          team_overlap_warning: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          days_count: number
+          end_date: string
+          id?: string
+          leave_type: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date: string
+          status?: string | null
+          team_overlap_warning?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          days_count?: number
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string
+          status?: string | null
+          team_overlap_warning?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payslips: {
+        Row: {
+          absence_deduction: number | null
+          basic_salary: number
+          created_at: string | null
+          food_allowance: number | null
+          gross_salary: number
+          housing_allowance: number | null
+          id: string
+          late_deduction: number | null
+          loan_deduction: number | null
+          month: number
+          net_salary: number
+          notes: string | null
+          other_allowances: number | null
+          other_deductions: number | null
+          overtime_amount: number | null
+          overtime_hours: number | null
+          paid_at: string | null
+          phone_allowance: number | null
+          status: string | null
+          total_deductions: number
+          transportation_allowance: number | null
+          updated_at: string | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          absence_deduction?: number | null
+          basic_salary?: number
+          created_at?: string | null
+          food_allowance?: number | null
+          gross_salary?: number
+          housing_allowance?: number | null
+          id?: string
+          late_deduction?: number | null
+          loan_deduction?: number | null
+          month: number
+          net_salary?: number
+          notes?: string | null
+          other_allowances?: number | null
+          other_deductions?: number | null
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          paid_at?: string | null
+          phone_allowance?: number | null
+          status?: string | null
+          total_deductions?: number
+          transportation_allowance?: number | null
+          updated_at?: string | null
+          user_id: string
+          year: number
+        }
+        Update: {
+          absence_deduction?: number | null
+          basic_salary?: number
+          created_at?: string | null
+          food_allowance?: number | null
+          gross_salary?: number
+          housing_allowance?: number | null
+          id?: string
+          late_deduction?: number | null
+          loan_deduction?: number | null
+          month?: number
+          net_salary?: number
+          notes?: string | null
+          other_allowances?: number | null
+          other_deductions?: number | null
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          paid_at?: string | null
+          phone_allowance?: number | null
+          status?: string | null
+          total_deductions?: number
+          transportation_allowance?: number | null
+          updated_at?: string | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -53,6 +353,53 @@ export type Database = {
         }
         Relationships: []
       }
+      salary_components: {
+        Row: {
+          basic_salary: number
+          created_at: string | null
+          food_allowance: number | null
+          housing_allowance: number | null
+          id: string
+          other_allowances: number | null
+          phone_allowance: number | null
+          transportation_allowance: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          basic_salary?: number
+          created_at?: string | null
+          food_allowance?: number | null
+          housing_allowance?: number | null
+          id?: string
+          other_allowances?: number | null
+          phone_allowance?: number | null
+          transportation_allowance?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          basic_salary?: number
+          created_at?: string | null
+          food_allowance?: number | null
+          housing_allowance?: number | null
+          id?: string
+          other_allowances?: number | null
+          phone_allowance?: number | null
+          transportation_allowance?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_components_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -76,6 +423,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_team_leave_overlap: {
+        Args: { p_end_date: string; p_start_date: string; p_user_id: string }
+        Returns: {
+          overlap_count: number
+          overlapping_employees: string[]
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
