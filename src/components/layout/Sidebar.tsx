@@ -36,6 +36,7 @@ const navigation: NavItem[] = [
   { name: "Documents", href: "/documents", icon: FileText },
   { name: "Expenses", href: "/expenses", icon: Receipt, roles: ["ceo", "admin_hr", "bdm"] },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 const Sidebar = () => {
