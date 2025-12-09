@@ -9,6 +9,7 @@ export interface Expense {
   amount: number;
   description: string;
   receipt_url: string | null;
+  receipts: string[] | null;
   expense_date: string;
   status: string;
   reviewed_by: string | null;
@@ -72,6 +73,7 @@ export function useCreateExpense() {
       amount: number;
       description: string;
       receipt_url?: string;
+      receipts?: string[];
       expense_date: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();

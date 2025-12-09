@@ -15,8 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth, roleDisplayNames, AppRole } from "@/hooks/useAuth";
+import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
@@ -87,7 +86,7 @@ const Sidebar = () => {
             <img 
               src={logo} 
               alt="Beauty Maps" 
-              className={cn("transition-all", collapsed ? "h-10 w-10 object-contain" : "h-12 w-auto")} 
+              className={cn("transition-all brightness-0 invert", collapsed ? "h-10 w-10 object-contain" : "h-12 w-auto")} 
             />
           </div>
           <Button
@@ -125,39 +124,13 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        {/* User Profile */}
+        {/* Logout Button */}
         <div className="border-t border-sidebar-border p-3">
-          <div
-            className={cn(
-              "flex items-center gap-3 rounded-lg p-2",
-              collapsed && "justify-center"
-            )}
-          >
-            <Avatar className="h-9 w-9 border-2 border-primary/20">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary">{getInitials()}</AvatarFallback>
-            </Avatar>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {profile?.full_name || profile?.email || "User"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {role ? roleDisplayNames[role] : "Loading..."}
-                </p>
-              </div>
-            )}
-            {!collapsed && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                <Settings className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
           <Button
             variant="ghost"
             onClick={handleLogout}
             className={cn(
-              "mt-2 w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+              "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
               collapsed && "justify-center px-2"
             )}
           >

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEmployee, useUpdateEmployee, Employee } from "@/hooks/useEmployees";
+import { useBankDetails } from "@/hooks/useBankDetails";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -29,7 +30,7 @@ import {
   useDownloadDocument,
 } from "@/hooks/useEmployeeDocuments";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Upload, Download, Trash2, FileText, Mail, Phone, Building, Briefcase, Calendar, User } from "lucide-react";
+import { Loader2, Upload, Download, Trash2, FileText, Mail, Phone, Building, Briefcase, Calendar, User, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 
 interface EmployeeProfileDialogProps {
@@ -48,6 +49,7 @@ const EmployeeProfileDialog = ({
   const [mode, setMode] = useState(initialMode);
   const { data: employee, isLoading } = useEmployee(employeeId);
   const { data: documents, isLoading: documentsLoading } = useEmployeeDocuments(employeeId);
+  const { data: bankDetails, isLoading: bankLoading } = useBankDetails(employeeId || undefined);
   const updateEmployee = useUpdateEmployee();
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
@@ -156,8 +158,9 @@ const EmployeeProfileDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="bank">Bank Details</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
 
@@ -321,6 +324,66 @@ const EmployeeProfileDialog = ({
                     Cancel
                   </Button>
                 </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="bank" className="space-y-4 mt-4">
+            {bankLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : bankDetails ? (
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Bank Name</p>
+                      <p className="text-sm font-medium">{bankDetails.bank_name || "Not set"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Holder</p>
+                      <p className="text-sm font-medium">{bankDetails.account_holder_name || "Not set"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Number</p>
+                      <p className="text-sm font-medium">{bankDetails.account_number || "Not set"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">IBAN</p>
+                      <p className="text-sm font-medium">{bankDetails.iban || "Not set"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">SWIFT Code</p>
+                      <p className="text-sm font-medium">{bankDetails.swift_code || "Not set"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Building className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Branch</p>
+                      <p className="text-sm font-medium">{bankDetails.branch_name || "Not set"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No bank details added</p>
               </div>
             )}
           </TabsContent>
