@@ -14,6 +14,7 @@ export interface LeaveRequest {
   reviewed_by: string | null;
   reviewed_at: string | null;
   team_overlap_warning: boolean;
+  attachments: string[] | null;
   created_at: string;
   profiles?: {
     full_name: string | null;
@@ -125,6 +126,7 @@ export function useCreateLeaveRequest() {
       days_count: number;
       reason?: string;
       team_overlap_warning?: boolean;
+      attachments?: string[];
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");

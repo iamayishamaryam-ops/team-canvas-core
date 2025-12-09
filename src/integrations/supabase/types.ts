@@ -117,6 +117,7 @@ export type Database = {
           expense_date: string
           id: string
           receipt_url: string | null
+          receipts: string[] | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string | null
@@ -131,6 +132,7 @@ export type Database = {
           expense_date?: string
           id?: string
           receipt_url?: string | null
+          receipts?: string[] | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
@@ -145,6 +147,7 @@ export type Database = {
           expense_date?: string
           id?: string
           receipt_url?: string | null
+          receipts?: string[] | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
@@ -211,6 +214,7 @@ export type Database = {
       }
       leave_requests: {
         Row: {
+          attachments: string[] | null
           created_at: string | null
           days_count: number
           end_date: string
@@ -226,6 +230,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: string[] | null
           created_at?: string | null
           days_count: number
           end_date: string
@@ -241,6 +246,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: string[] | null
           created_at?: string | null
           days_count?: number
           end_date?: string

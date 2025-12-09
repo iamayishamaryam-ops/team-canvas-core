@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,8 +47,12 @@ import {
   MoreHorizontal,
   Trash,
   Loader2,
+  Upload,
+  FileText,
+  Paperclip,
 } from "lucide-react";
 import { useExpenses, useMyExpenses, useCreateExpense, useUpdateExpenseStatus, useDeleteExpense, Expense } from "@/hooks/useExpenses";
+import { useUploadExpenseReceipt } from "@/hooks/useAttachments";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO } from "date-fns";
 
@@ -99,12 +103,16 @@ const Expenses = () => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
+  const [receipts, setReceipts] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: allExpenses, isLoading } = useExpenses(activeTab);
   const { data: myExpenses } = useMyExpenses();
   const createExpense = useCreateExpense();
   const updateStatus = useUpdateExpenseStatus();
   const deleteExpense = useDeleteExpense();
+  const uploadReceipt = useUploadExpenseReceipt();
   const { user, isAdminLevel } = useAuth();
 
   const expenses = isAdminLevel ? allExpenses : myExpenses;
@@ -118,27 +126,53 @@ const Expenses = () => {
     return { category: cat, total };
   }).filter((c) => c.total > 0);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!category || !amount || !description) return;
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setReceipts((prev) => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-    createExpense.mutate(
-      {
+  const removeReceipt = (index: number) => {
+    setReceipts((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!category || !amount || !description || !user?.id) return;
+
+    setIsUploading(true);
+
+    try {
+      // Upload receipts first
+      const uploadedPaths: string[] = [];
+      
+      for (const file of receipts) {
+        const path = await uploadReceipt.mutateAsync({
+          userId: user.id,
+          file,
+        });
+        uploadedPaths.push(path);
+      }
+
+      await createExpense.mutateAsync({
         category,
         amount: parseFloat(amount),
         description,
         expense_date: expenseDate,
-      },
-      {
-        onSuccess: () => {
-          setDialogOpen(false);
-          setCategory("");
-          setAmount("");
-          setDescription("");
-          setExpenseDate(new Date().toISOString().split("T")[0]);
-        },
-      }
-    );
+        receipts: uploadedPaths.length > 0 ? uploadedPaths : undefined,
+      });
+
+      setDialogOpen(false);
+      setCategory("");
+      setAmount("");
+      setDescription("");
+      setExpenseDate(new Date().toISOString().split("T")[0]);
+      setReceipts([]);
+    } catch (error) {
+      console.error("Failed to submit expense:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleApprove = (id: string) => {
@@ -170,7 +204,7 @@ const Expenses = () => {
                   Add Expense
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              <DialogContent className="bg-card border-border max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Add New Expense</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -221,15 +255,62 @@ const Expenses = () => {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Brief description of the expense..."
-                      className="bg-secondary border-border min-h-[100px]"
+                      className="bg-secondary border-border min-h-[80px]"
                     />
                   </div>
+
+                  {/* Receipts */}
+                  <div className="space-y-2">
+                    <Label>Receipts / Bills</Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Add Receipts
+                    </Button>
+                    {receipts.length > 0 && (
+                      <div className="space-y-2 mt-2">
+                        {receipts.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-2 rounded-lg bg-secondary/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                              onClick={() => removeReceipt(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full gradient-primary text-primary-foreground"
-                    disabled={createExpense.isPending}
+                    disabled={createExpense.isPending || isUploading}
                   >
-                    {createExpense.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {(createExpense.isPending || isUploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Submit Expense
                   </Button>
                 </form>
@@ -361,6 +442,7 @@ const Expenses = () => {
               <TableBody>
                 {expenses?.map((expense, index) => {
                   const Icon = categoryIcons[expense.category] || MoreHorizontal;
+                  const hasReceipts = (expense.receipts && expense.receipts.length > 0) || expense.receipt_url;
                   return (
                     <TableRow
                       key={expense.id}
@@ -387,7 +469,14 @@ const Expenses = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                        {expense.description}
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{expense.description}</span>
+                          {hasReceipts && (
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 shrink-0">
+                              <Paperclip className="h-3 w-3" />
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold text-foreground">
                         {formatCurrency(Number(expense.amount))}
@@ -426,10 +515,11 @@ const Expenses = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-primary hover:text-primary/80"
+                            className="text-primary hover:bg-primary/10"
                             onClick={() => handleReimburse(expense.id)}
                             disabled={updateStatus.isPending}
                           >
+                            <DollarSign className="h-4 w-4 mr-1" />
                             Reimburse
                           </Button>
                         ) : expense.status === "pending" && expense.user_id === user?.id ? (

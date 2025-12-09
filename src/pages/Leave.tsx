@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,9 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
-import { Calendar, Plus, Check, X, Clock, Palmtree, Heart, Briefcase, AlertTriangle, Loader2, Trash } from "lucide-react";
+import { Calendar, Plus, Check, X, Clock, Palmtree, Heart, Briefcase, AlertTriangle, Loader2, Trash, Upload, FileText, Paperclip } from "lucide-react";
 import { useLeaveRequests, useLeaveBalances, useCreateLeaveRequest, useUpdateLeaveRequest, useCheckTeamOverlap, useDeleteLeaveRequest } from "@/hooks/useLeave";
+import { useUploadLeaveAttachment } from "@/hooks/useAttachments";
 import { useAuth } from "@/hooks/useAuth";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -71,6 +72,9 @@ const Leave = () => {
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
   const [overlapWarning, setOverlapWarning] = useState<{ count: number; employees: string[] } | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: leaveRequests, isLoading } = useLeaveRequests(activeTab);
   const { data: leaveBalances } = useLeaveBalances();
@@ -78,6 +82,7 @@ const Leave = () => {
   const updateLeave = useUpdateLeaveRequest();
   const deleteLeave = useDeleteLeaveRequest();
   const checkOverlap = useCheckTeamOverlap();
+  const uploadAttachment = useUploadLeaveAttachment();
   const { user, isAdminLevel } = useAuth();
 
   // Check overlap when dates change
@@ -98,32 +103,61 @@ const Leave = () => {
     }
   }, [startDate, endDate, user?.id]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!leaveType || !startDate || !endDate) return;
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAttachments((prev) => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leaveType || !startDate || !endDate || !user?.id) return;
+
+    setIsUploading(true);
     const daysCount = differenceInDays(parseISO(endDate), parseISO(startDate)) + 1;
 
-    createLeave.mutate(
-      {
-        leave_type: leaveType,
-        start_date: startDate,
-        end_date: endDate,
-        days_count: daysCount,
-        reason,
-        team_overlap_warning: overlapWarning !== null,
-      },
-      {
-        onSuccess: () => {
-          setOpen(false);
-          setLeaveType("");
-          setStartDate("");
-          setEndDate("");
-          setReason("");
-          setOverlapWarning(null);
-        },
+    try {
+      // Upload attachments first
+      const uploadedPaths: string[] = [];
+      const tempLeaveId = `temp_${Date.now()}`;
+      
+      for (const file of attachments) {
+        const path = await uploadAttachment.mutateAsync({
+          userId: user.id,
+          leaveRequestId: tempLeaveId,
+          file,
+        });
+        uploadedPaths.push(path);
       }
-    );
+
+      await createLeave.mutateAsync(
+        {
+          leave_type: leaveType,
+          start_date: startDate,
+          end_date: endDate,
+          days_count: daysCount,
+          reason,
+          team_overlap_warning: overlapWarning !== null,
+          attachments: uploadedPaths.length > 0 ? uploadedPaths : undefined,
+        }
+      );
+
+      setOpen(false);
+      setLeaveType("");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+      setOverlapWarning(null);
+      setAttachments([]);
+    } catch (error) {
+      console.error("Failed to submit leave request:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleApprove = async (id: string) => {
@@ -175,7 +209,7 @@ const Leave = () => {
                 Apply for Leave
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-card border-border max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Apply for Leave</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -236,15 +270,62 @@ const Leave = () => {
                     placeholder="Brief description of your leave reason..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="bg-secondary border-border min-h-[100px]"
+                    className="bg-secondary border-border min-h-[80px]"
                   />
                 </div>
+
+                {/* Attachments */}
+                <div className="space-y-2">
+                  <Label className="text-foreground">Attachments (Medical certificates, etc.)</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Add Attachments
+                  </Button>
+                  {attachments.length > 0 && (
+                    <div className="space-y-2 mt-2">
+                      {attachments.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 rounded-lg bg-secondary/50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive"
+                            onClick={() => removeAttachment(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full gradient-primary text-primary-foreground"
-                  disabled={createLeave.isPending}
+                  disabled={createLeave.isPending || isUploading}
                 >
-                  {createLeave.isPending ? (
+                  {(createLeave.isPending || isUploading) ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : null}
                   Submit Request
@@ -346,6 +427,12 @@ const Leave = () => {
                               <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
                                 <AlertTriangle className="h-3 w-3 mr-1" />
                                 Overlap
+                              </Badge>
+                            )}
+                            {request.attachments && request.attachments.length > 0 && (
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                <Paperclip className="h-3 w-3 mr-1" />
+                                {request.attachments.length}
                               </Badge>
                             )}
                           </div>
