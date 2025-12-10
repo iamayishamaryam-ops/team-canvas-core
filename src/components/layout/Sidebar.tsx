@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/sidebar-logo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NavItem {
@@ -86,8 +86,14 @@ export const SidebarContent = ({ collapsed, setCollapsed, className, onItemClick
           <img
             src={logo}
             alt="Beauty Maps"
-            className={cn("transition-all brightness-0 invert", collapsed ? "h-10 w-10 object-contain" : "h-12 w-auto")}
+            className={cn("transition-all brightness-0 invert", collapsed ? "h-10 w-10 object-contain" : "h-10 w-auto")}
           />
+          {!collapsed && (
+            <div className="flex flex-col leading-none">
+              <span className="text-lg font-bold tracking-wide text-foreground font-['Outfit']">BEAUTYMAPS</span>
+              <span className="text-[10px] font-medium tracking-[0.2em] text-muted-foreground uppercase">- CRM</span>
+            </div>
+          )}
         </div>
         {setCollapsed && (
           <Button

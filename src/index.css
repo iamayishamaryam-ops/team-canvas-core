@@ -1,11 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @import "@fontsource/dm-sans/400.css";
 @import "@fontsource/dm-sans/500.css";
 @import "@fontsource/dm-sans/600.css";
 @import "@fontsource/dm-sans/700.css";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Beauty Maps CRM Design System - Brand Colors */
 /* Primary: #27333C (Dark Teal), #BE8E44 (Gold), #4A778E (Teal), #E8B787 (Peach) */
