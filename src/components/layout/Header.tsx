@@ -48,7 +48,7 @@ const Header = ({ collapsed, setMobileOpen }: HeaderProps) => {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 z-30 h-16 border-b border-border bg-card/80 backdrop-blur-xl transition-all duration-300",
+        "fixed top-0 right-0 z-30 h-16 border-b border-border bg-card/80 backdrop-blur-xl transition-all duration-300 md:hidden",
         collapsed ? "left-20" : "left-64",
         "max-md:left-0" // Always full width on mobile
       )}

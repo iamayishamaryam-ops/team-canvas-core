@@ -28,9 +28,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       <main
         className={cn(
-          "pt-16 transition-all duration-300",
+          "transition-all duration-300",
           collapsed ? "pl-20" : "pl-64",
-          "max-md:pl-0" // No padding on mobile
+          "pt-0 max-md:pt-16 max-md:pl-0" // No padding on desktop (header hidden), padding on mobile (header visible)
         )}
       >
         <div className="p-6">{children}</div>
