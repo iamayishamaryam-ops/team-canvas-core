@@ -34,7 +34,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { useDocuments } from "@/hooks/useDocuments";
 
 const documentTypes = ["Passport", "Visa", "ID", "Contract", "Other"] as const;
 
@@ -56,7 +55,7 @@ export function UploadDocumentModal({
     onOpenChange,
 }: UploadDocumentModalProps) {
     const [file, setFile] = useState<File | null>(null);
-    const { uploadDocument, isUploading } = useDocuments();
+
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
