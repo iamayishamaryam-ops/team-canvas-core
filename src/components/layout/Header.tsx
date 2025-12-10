@@ -64,6 +64,17 @@ const Header = ({ collapsed, setMobileOpen }: HeaderProps) => {
           >
             <Menu className="h-5 w-5" />
           </Button>
+
+          {/* Mobile Logo */}
+          <div className="flex items-center gap-2 md:hidden">
+            <img
+              src={logo}
+              alt="Beauty Maps"
+              className="h-8 w-auto brightness-0 invert"
+            />
+            <span className="font-semibold text-lg">Beauty Maps</span>
+          </div>
+
           <div />
         </div>
 
@@ -72,12 +83,12 @@ const Header = ({ collapsed, setMobileOpen }: HeaderProps) => {
           <img
             src={logo}
             alt="Beauty Maps"
-            className="h-8 w-auto brightness-0 invert"
+            className="hidden h-6 w-auto brightness-0 invert md:flex"
           />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full md:hidden">
                 <Avatar className="h-10 w-10 border-2 border-primary/20">
                   <AvatarImage src={profile?.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary">

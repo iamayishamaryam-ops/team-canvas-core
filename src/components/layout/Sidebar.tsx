@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NavItem {
   name: string;
@@ -103,6 +104,37 @@ export const SidebarContent = ({ collapsed, setCollapsed, className, onItemClick
         )}
       </div>
 
+      {/* User Profile */}
+      <div className={cn("flex flex-col gap-2 border-b border-sidebar-border p-4", collapsed && "items-center px-2")}>
+        <div className={cn("flex items-center gap-3 transition-all", collapsed && "justify-center")}>
+          <Avatar className={cn("border-2 border-primary/20", collapsed ? "h-8 w-8" : "h-10 w-10")}>
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+              {getInitials()}
+            </AvatarFallback>
+          </Avatar>
+
+          {!collapsed && (
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+              <span className="truncate text-sm font-medium">{profile?.full_name || "User"}</span>
+              <span className="truncate text-xs text-muted-foreground capitalize">{role || "Employee"}</span>
+            </div>
+          )}
+
+          {!collapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="ml-auto h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-3">
         {filteredNavigation.map((item) => (
@@ -127,20 +159,17 @@ export const SidebarContent = ({ collapsed, setCollapsed, className, onItemClick
 
       {/* Logout Button */}
       <div className="border-t border-sidebar-border p-3">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            handleLogout();
-            onItemClick?.();
-          }}
-          className={cn(
-            "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
-            collapsed && "justify-center px-2"
-          )}
-        >
-          <LogOut className="h-4 w-4" />
-          {!collapsed && <span>Logout</span>}
-        </Button>
+        {/* Logout functionality moved to top profile section */}
+        {collapsed && (
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="w-full justify-center px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
