@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -38,8 +37,14 @@ const navigation: NavItem[] = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  collapsed?: boolean;
+  setCollapsed?: (collapsed: boolean) => void;
+  className?: string; // Allow overriding styles for mobile
+  onItemClick?: () => void;
+}
+
+export const SidebarContent = ({ collapsed, setCollapsed, className, onItemClick }: SidebarProps) => {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -73,22 +78,17 @@ const Sidebar = () => {
   };
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300",
-        collapsed ? "w-20" : "w-64"
-      )}
-    >
-      <div className="flex h-full flex-col">
-        {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-          <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-            <img 
-              src={logo} 
-              alt="Beauty Maps" 
-              className={cn("transition-all brightness-0 invert", collapsed ? "h-10 w-10 object-contain" : "h-12 w-auto")} 
-            />
-          </div>
+    <div className={cn("flex h-full flex-col bg-sidebar", className)}>
+      {/* Logo */}
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+          <img
+            src={logo}
+            alt="Beauty Maps"
+            className={cn("transition-all brightness-0 invert", collapsed ? "h-10 w-10 object-contain" : "h-12 w-auto")}
+          />
+        </div>
+        {setCollapsed && (
           <Button
             variant="ghost"
             size="icon"
@@ -100,45 +100,61 @@ const Sidebar = () => {
           >
             <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
           </Button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-3">
-          {filteredNavigation.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                  collapsed && "justify-center px-2",
-                  isActive
-                    ? "bg-primary/10 text-primary shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground"
-                )
-              }
-            >
-              <item.icon className={cn("h-5 w-5 flex-shrink-0")} />
-              {!collapsed && <span>{item.name}</span>}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Logout Button */}
-        <div className="border-t border-sidebar-border p-3">
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className={cn(
-              "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
-              collapsed && "justify-center px-2"
-            )}
-          >
-            <LogOut className="h-4 w-4" />
-            {!collapsed && <span>Logout</span>}
-          </Button>
-        </div>
+        )}
       </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 p-3">
+        {filteredNavigation.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                collapsed && "justify-center px-2",
+                isActive
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground"
+              )
+            }
+          >
+            <item.icon className={cn("h-5 w-5 flex-shrink-0")} />
+            {!collapsed && <span>{item.name}</span>}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Logout Button */}
+      <div className="border-t border-sidebar-border p-3">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            handleLogout();
+            onItemClick?.();
+          }}
+          className={cn(
+            "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+            collapsed && "justify-center px-2"
+          )}
+        >
+          <LogOut className="h-4 w-4" />
+          {!collapsed && <span>Logout</span>}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
+  return (
+    <aside
+      className={cn(
+        "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300 hidden md:block",
+        collapsed ? "w-20" : "w-64"
+      )}
+    >
+      <SidebarContent collapsed={collapsed} setCollapsed={setCollapsed} />
     </aside>
   );
 };

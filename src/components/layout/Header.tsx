@@ -1,4 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +11,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth, roleDisplayNames } from "@/hooks/useAuth";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, Menu } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
-const Header = () => {
+interface HeaderProps {
+  collapsed: boolean;
+  setMobileOpen: (open: boolean) => void;
+}
+
+const Header = ({ collapsed, setMobileOpen }: HeaderProps) => {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -40,10 +46,26 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 right-0 left-64 z-30 h-16 border-b border-border bg-card/80 backdrop-blur-xl transition-all duration-300">
+    <header
+      className={cn(
+        "fixed top-0 right-0 z-30 h-16 border-b border-border bg-card/80 backdrop-blur-xl transition-all duration-300",
+        collapsed ? "left-20" : "left-64",
+        "max-md:left-0" // Always full width on mobile
+      )}
+    >
       <div className="flex h-full items-center justify-between px-6">
-        {/* Left: breadcrumb/title area - can be expanded later */}
-        <div />
+        {/* Left: Mobile Menu & Breadcrumbs */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div />
+        </div>
 
         {/* Right: User profile */}
         <div className="flex items-center gap-4">
