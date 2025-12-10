@@ -75,9 +75,9 @@ const categoryLabels: Record<string, string> = {
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return "SR " + new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -145,7 +145,7 @@ const Expenses = () => {
     try {
       // Upload receipts first
       const uploadedPaths: string[] = [];
-      
+
       for (const file of receipts) {
         const path = await uploadReceipt.mutateAsync({
           userId: user.id,
@@ -412,7 +412,7 @@ const Expenses = () => {
               </div>
             </Tabs>
           )}
-          
+
           <div className="border-b border-border p-5">
             <h3 className="text-lg font-semibold text-foreground">Recent Expenses</h3>
             <p className="text-sm text-muted-foreground">Review and approve expense claims</p>

@@ -8,9 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const formatCurrency = (amount: number) => {
   if (amount >= 1000) {
-    return `$${(amount / 1000).toFixed(1)}K`;
+    return `SR ${(amount / 1000).toFixed(1)}K`;
   }
-  return `$${amount.toFixed(0)}`;
+  return `SR ${amount.toFixed(0)}`;
 };
 
 const Dashboard = () => {

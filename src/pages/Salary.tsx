@@ -35,10 +35,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return "SR " + new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 };
 
@@ -131,11 +130,11 @@ const Salary = () => {
 
   const handleGeneratePayslip = () => {
     if (!selectedEmployee) return;
-    
+
     const salary = salaryComponents?.find((s) => s.user_id === selectedEmployee);
     if (!salary) return;
 
-    const grossSalary = 
+    const grossSalary =
       Number(salary.basic_salary) +
       Number(salary.housing_allowance) +
       Number(salary.transportation_allowance) +
